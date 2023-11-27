@@ -1,0 +1,6 @@
+CREATE TABLE files (
+     id INT AUTO_INCREMENT PRIMARY KEY,
+     filename VARCHAR(255)
+     file_path VARCHAR(255)
+     upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+     );
