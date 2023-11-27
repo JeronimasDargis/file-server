@@ -5,6 +5,7 @@ from urllib.parse import urlparse, parse_qs
 import json
 from datetime import datetime
 from dotenv import load_dotenv
+import re
 
 load_dotenv()
 
@@ -27,15 +28,28 @@ class CustomJSONEncoder(json.JSONEncoder):
 
 
 class MyHandler(BaseHTTPRequestHandler):
+ 
+
     def do_GET(self):
+        # Enable CORS for all domains (you might want to restrict this in production)
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        
+
+
         # Parse the URL to get the path and query parameters
         url_parts = urlparse(self.path)
         path = url_parts.path
         query_params = parse_qs(url_parts.query)
+        pattern = re.compile(r'/files/(\d+)')
 
         # Connect to the database
         connection = mysql.connector.connect(**db_config)
+        
 
+        match = pattern.match(self.path)
         try:
             # Create a cursor object
             cursor = connection.cursor(dictionary=True)
@@ -47,21 +61,28 @@ class MyHandler(BaseHTTPRequestHandler):
 
                 # Fetch all rows
                 rows = cursor.fetchall()
+            
 
-                 # Use the custom JSON encoder
-                json_response = json.dumps({'files': rows}, cls=CustomJSONEncoder)
+            elif match:
+                # Get the id from the matched group
+                file_id = match.group(1)
 
-                # Send a JSON response
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json_response.encode())
+                # Example: Execute a SELECT query for a specific file by id
+                cursor.execute("SELECT * FROM files WHERE id = %s", (file_id,))
+                rows = cursor.fetchall()
 
             else:
                 # Send a 404 response for unknown paths
                 self.send_response(404)
-                self.end_headers()
                 self.wfile.write(b'Not Found')
+                return
+
+
+                 # Use the custom JSON encoder
+            json_response = json.dumps({'files': rows}, cls=CustomJSONEncoder)
+
+            # Send a JSON response
+            self.wfile.write(json_response.encode())
 
         finally:
             # Close the cursor and connection

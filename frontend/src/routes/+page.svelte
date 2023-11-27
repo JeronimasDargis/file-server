@@ -1,50 +1,77 @@
-<script>
+<script lang="ts">
 	import pigeon from '$lib/images/pigeon.webp';
-	import welcome_fallback from '$lib/images/svelte-welcome.png';
+	import { onMount } from 'svelte';
+
+	let files = <any>[];
+
+	onMount(async () => {
+		const response = await fetch('http://127.0.0.1:8000/files');
+		const { files: data } = await response.json();
+		files = data;
+	});
+
+	const download = (id: Number) => async () => {
+		console.log(id);
+		const response = await fetch(`http://127.0.0.1:8000/files/${id}`);
+	};
 </script>
 
 <svelte:head>
 	<title>Home</title>
-	<meta name="description" content="Svelte demo app" />
+	<meta name="description" content="my home" />
 </svelte:head>
 
 <section>
-	<div>
+	<div class="section">
 		<img style="width: auto; padding-bottom: 2rem; height: 300px;" src={pigeon} alt="Pigeon" />
+		<h1>Give me your files</h1>
+		<input type="file" />
 	</div>
 
-	<h1>Give me your files</h1>
-	<input type="file" />
+	<div class="collection">
+		<div style="display: grid; grid-template-columns: 10fr 10fr 10fr 1fr; padding: 0.5rem">
+			<p>name</p>
+			<p>uploaded</p>
+			<p>size</p>
+		</div>
+		{#each files as file}
+			<div class="file-row">
+				<h2>
+					{file.filename}
+				</h2>
+				<h2>
+					{file.upload_date}
+				</h2>
+				<h2>size..</h2>
+				<div on:click={download(file.id)}>
+					<h2>get</h2>
+				</div>
+			</div>
+		{:else}
+			<p>loading...</p>
+		{/each}
+	</div>
 </section>
 
 <style>
-	section {
+	.section {
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
 		flex: 0.6;
+		margin-bottom: 5rem;
 	}
 
-	h1 {
-		width: 100%;
+	.collection {
+		/* styling */
 	}
 
-	.welcome {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		position: relative;
-		width: 100%;
-		height: 0;
-		padding: 0 0 calc(100% * 495 / 2048) 0;
-	}
-
-	.welcome img {
-		position: absolute;
-		width: 100%;
-		height: 100%;
-		top: 0;
-		display: block;
+	.file-row {
+		background-color: azure;
+		padding: 0.5rem;
+		border-radius: 0.5rem;
+		display: grid;
+		grid-template-columns: 10fr 10fr 10fr 1fr;
 	}
 </style>
