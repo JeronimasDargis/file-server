@@ -1,6 +1,5 @@
 <script>
-	import Counter from './Counter.svelte';
-	import welcome from '$lib/images/svelte-welcome.webp';
+	import pigeon from '$lib/images/pigeon.webp';
 	import welcome_fallback from '$lib/images/svelte-welcome.png';
 </script>
 
@@ -10,22 +9,12 @@
 </svelte:head>
 
 <section>
-	<h1>
-		<span class="welcome">
-			<picture>
-				<source srcset={welcome} type="image/webp" />
-				<img src={welcome_fallback} alt="Welcome" />
-			</picture>
-		</span>
+	<div>
+		<img style="width: auto; padding-bottom: 2rem; height: 300px;" src={pigeon} alt="Pigeon" />
+	</div>
 
-		to your new<br />SvelteKit app
-	</h1>
-
-	<h2>
-		try editing <strong>src/routes/+page.svelte</strong>
-	</h2>
-
-	<Counter />
+	<h1>Give me your files</h1>
+	<input type="file" />
 </section>
 
 <style>
@@ -42,7 +31,9 @@
 	}
 
 	.welcome {
-		display: block;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 		position: relative;
 		width: 100%;
 		height: 0;
