@@ -1,16 +1,30 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
+import os
 import mysql.connector
 from urllib.parse import urlparse, parse_qs
 import json
+from datetime import datetime
 from dotenv import load_dotenv
 
+load_dotenv()
 
 db_config = {
-    'host': 'localhost',
-    'user': 'your_username',
-    'password': 'your_password',
-    'database': 'your_database_name',
+    'host': os.getenv('DB_HOST'),
+    'user': os.getenv('DB_USER'),
+    'password': os.getenv('DB_PASSWORD'),
+    'database': os.getenv('DB_NAME'),
 }
+
+
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        # Custom serialization for datetime objects
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+
+        # If the object is not a datetime, use the default encoder
+        return super().default(obj)
+
 
 class MyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -34,11 +48,14 @@ class MyHandler(BaseHTTPRequestHandler):
                 # Fetch all rows
                 rows = cursor.fetchall()
 
+                 # Use the custom JSON encoder
+                json_response = json.dumps({'files': rows}, cls=CustomJSONEncoder)
+
                 # Send a JSON response
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
-                self.wfile.write(json.dumps({'files': rows}).encode())
+                self.wfile.write(json_response.encode())
 
             else:
                 # Send a 404 response for unknown paths
