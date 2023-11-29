@@ -1,13 +1,14 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
-import os
-import mysql.connector
 from urllib.parse import urlparse, parse_qs
-import json
 from datetime import datetime
 from dotenv import load_dotenv
-import re
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+
+import os
+import mysql.connector
+import json
+import re
 
 app = Flask(__name__)
 CORS(app)
@@ -20,6 +21,15 @@ db_config = {
     'password': os.getenv('DB_PASSWORD'),
     'database': os.getenv('DB_NAME'),
 }
+
+UPLOAD_FOLDER = os.getenv('UPLOAD_PATH') 
+
+# @todo Review actual extensions
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
+
+
+# @todo extend to config init script
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 def store_file_metadata(filename, file_path):
     connection = mysql.connector.connect(**db_config)
@@ -76,16 +86,20 @@ def upload_file():
         return jsonify({'error': 'No file part'}), 400
 
     file = request.files['file']
+    filename = file.filename
 
-    if file.filename == '':
+    if filename == '':
         return jsonify({'error': 'No selected file'}), 400
 
+    # @todo create a function for name validation
+   
+
     # Save the file to a storage location
-    # file_path = f'/path/to/storage/{file.filename}'
-    # file.save(file_path)
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(file_path)
 
     # Store file metadata in the database
-    store_file_metadata(file.filename, 'test/path')
+    store_file_metadata(filename, file_path)
 
     return jsonify({'message': 'File uploaded successfully'})
 
