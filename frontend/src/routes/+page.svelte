@@ -8,11 +8,48 @@
 		const response = await fetch('http://127.0.0.1:5000/files');
 		const { files: data } = await response.json();
 		files = data;
+
+		const fileUploadInput = document.getElementById('uploadForm');
+		if (fileUploadInput) {
+			fileUploadInput.addEventListener('submit', uploadFile());
+		}
 	});
 
 	const download = (id: Number) => async () => {
 		console.log(id);
 		const response = await fetch(`http://127.0.0.1:5000/files/${id}`);
+	};
+
+	const deleteFile = (id: Number) => async () => {
+		const response = await fetch(`http://127.0.0.1:5000/delete/${id}`, {
+			method: 'POST'
+		});
+		console.log(response);
+	};
+
+	const uploadFile = () => async (e: Event) => {
+		e.preventDefault(); // Prevent the default form submission behavior
+
+		const form = document.getElementById('uploadForm') as HTMLFormElement;
+		const formData = new FormData(form);
+
+		fetch(form.action, {
+			method: form.method,
+			body: formData
+		})
+			.then((response) => {
+				if (!response.ok) {
+					throw new Error('Network response was not ok');
+				}
+				return response.json();
+			})
+			.then((data) => {
+				console.log(data);
+				// Handle the response as needed
+			})
+			.catch((error) => {
+				console.error('There was a problem with the fetch operation:', error);
+			});
 	};
 </script>
 
@@ -25,7 +62,12 @@
 	<div class="section">
 		<img style="width: auto; padding-bottom: 2rem; height: 300px;" src={pigeon} alt="Pigeon" />
 		<h1>Give me your files</h1>
-		<form action="http://127.0.0.1:5000/upload" method="post" enctype="multipart/form-data">
+		<form
+			id="uploadForm"
+			action="http://127.0.0.1:5000/upload"
+			method="post"
+			enctype="multipart/form-data"
+		>
 			<input type="file" name="file" />
 			<input type="submit" value="Upload" />
 		</form>
@@ -48,6 +90,9 @@
 				<h2>size..</h2>
 				<div on:click={download(file.id)}>
 					<h2>get</h2>
+				</div>
+				<div on:click={deleteFile(file.id)}>
+					<h2>delete</h2>
 				</div>
 			</div>
 		{:else}
@@ -75,6 +120,6 @@
 		padding: 0.5rem;
 		border-radius: 0.5rem;
 		display: grid;
-		grid-template-columns: 10fr 10fr 10fr 1fr;
+		grid-template-columns: 10fr 10fr 10fr 1fr 1fr;
 	}
 </style>
