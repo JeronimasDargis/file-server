@@ -1,10 +1,17 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
-import os
-import mysql.connector
 from urllib.parse import urlparse, parse_qs
-import json
 from datetime import datetime
 from dotenv import load_dotenv
+from flask import Flask, jsonify, request, send_file, make_response
+from flask_cors import CORS
+
+import os
+import mysql.connector
+import json
+import re
+
+app = Flask(__name__)
+CORS(app)
 
 load_dotenv()
 
@@ -15,6 +22,25 @@ db_config = {
     'database': os.getenv('DB_NAME'),
 }
 
+UPLOAD_FOLDER = os.getenv('UPLOAD_PATH') 
+
+# @todo Review actual extensions
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
+
+
+# @todo extend to config init script
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+def store_file_metadata(filename, file_path):
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+
+    try:
+        cursor.execute("INSERT INTO files (filename, file_path) VALUES (%s, %s)", (filename, file_path))
+        connection.commit()
+    finally:
+        cursor.close()
+        connection.close()
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -26,54 +52,102 @@ class CustomJSONEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-class MyHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        # Parse the URL to get the path and query parameters
-        url_parts = urlparse(self.path)
-        path = url_parts.path
-        query_params = parse_qs(url_parts.query)
+@app.route('/files', methods=['GET'])
+def get_all_files():
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
 
-        # Connect to the database
-        connection = mysql.connector.connect(**db_config)
+    try:
+        cursor.execute("SELECT * FROM files")
+        rows = cursor.fetchall()
+        return jsonify({'files': rows})
+    finally:
+        cursor.close()
+        connection.close()
 
-        try:
-            # Create a cursor object
-            cursor = connection.cursor(dictionary=True)
 
-            # Handle different paths
-            if path == '/files':
-                # Example: Execute a SELECT query
-                cursor.execute("SELECT * FROM files")
+@app.route('/files/<int:file_id>', methods=['GET'])
+def get_file(file_id):
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
 
-                # Fetch all rows
-                rows = cursor.fetchall()
+    try:
+        cursor.execute("SELECT * FROM files WHERE id = %s", (file_id,))
+        rows = cursor.fetchall()
+        return jsonify({'files': rows})
+    finally:
+        cursor.close()
+        connection.close()
 
-                 # Use the custom JSON encoder
-                json_response = json.dumps({'files': rows}, cls=CustomJSONEncoder)
 
-                # Send a JSON response
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json_response.encode())
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
 
-            else:
-                # Send a 404 response for unknown paths
-                self.send_response(404)
-                self.end_headers()
-                self.wfile.write(b'Not Found')
+    file = request.files['file']
+    filename = file.filename
 
-        finally:
-            # Close the cursor and connection
-            cursor.close()
-            connection.close()
+    if filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    # @todo create a function for name validation
+   
+
+    # Save the file to a storage location
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(file_path)
+
+    # Store file metadata in the database
+    store_file_metadata(filename, file_path)
+
+    return jsonify({'message': 'File uploaded successfully'})
+
+
+@app.route('/download/<int:file_id>', methods=['GET'])
+def download_file(file_id):
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+
+    # @todo path is already stored in the metadata so no need to query the db again..
+
+    try:
+        cursor.execute("SELECT * FROM files WHERE id = %s", (file_id,))
+        row = cursor.fetchone()
+        file_path = row['file_path']
+        filename = row['filename']
+    finally:
+        cursor.close()
+        connection.close()
+
+    if file_path == '':
+        return jsonify({'error': 'Error finding file in the database'}), 400
+
+    try:
+        response = send_file(file_path, download_name=filename, as_attachment=True)
+        return response
+    except FileNotFoundError:
+        return jsonify({'error': 'Error finding file on the server'}), 500
+   
+
+
+@app.route('/delete/<int:file_id>', methods=['POST'])
+def delete_file(file_id):
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+
+    try:
+        cursor.execute("DELETE FROM files WHERE id = %s", (file_id,))
+        connection.commit()
+        return jsonify({'message': 'File deleted successfully'}), 200
+    except Exception as e:
+        # Log the error
+        print(f"Error deleting file with id {file_id}: {e}")
+        return jsonify({'error': 'Failed to delete file'}), 500
+    finally:
+        cursor.close()
+        connection.close()
 
 # Run the HTTP server
-def run():
-    server_address = ('', 8000)
-    httpd = HTTPServer(server_address, MyHandler)
-    print('Starting server on port 8000...')
-    httpd.serve_forever()
-
 if __name__ == '__main__':
-    run()
+    app.run(debug=True)
