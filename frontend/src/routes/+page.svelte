@@ -15,10 +15,12 @@
 		}
 	});
 
-	const download = (id: Number) => async () => {
-		const response = await fetch(`http://127.0.0.1:5000/files/${id}`);
-		console.log(response);
-	};
+	function downloadFile(id: Number) {
+		const downloadUrl = `http://127.0.0.1:5000/download/${id}`;
+		const link = document.createElement('a');
+		link.href = downloadUrl;
+		link.click();
+	}
 
 	const deleteFile = (id: Number) => async () => {
 		const response = await fetch(`http://127.0.0.1:5000/delete/${id}`, {
@@ -85,7 +87,7 @@
 				</h2>
 				<h2>size..</h2>
 				<div style="display: flex">
-					<button on:click={download(file.id)}>
+					<button on:click={downloadFile(file.id)}>
 						<h2>get</h2>
 					</button>
 					<button on:click={deleteFile(file.id)}>

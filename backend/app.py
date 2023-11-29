@@ -2,7 +2,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qs
 from datetime import datetime
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file, make_response
 from flask_cors import CORS
 
 import os
@@ -102,6 +102,33 @@ def upload_file():
     store_file_metadata(filename, file_path)
 
     return jsonify({'message': 'File uploaded successfully'})
+
+
+@app.route('/download/<int:file_id>', methods=['GET'])
+def download_file(file_id):
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+
+    # @todo path is already stored in the metadata so no need to query the db again..
+
+    try:
+        cursor.execute("SELECT * FROM files WHERE id = %s", (file_id,))
+        row = cursor.fetchone()
+        file_path = row['file_path']
+        filename = row['filename']
+    finally:
+        cursor.close()
+        connection.close()
+
+    if file_path == '':
+        return jsonify({'error': 'Error finding file in the database'}), 400
+
+    try:
+        response = send_file(file_path, download_name=filename, as_attachment=True)
+        return response
+    except FileNotFoundError:
+        return jsonify({'error': 'Error finding file on the server'}), 500
+   
 
 
 @app.route('/delete/<int:file_id>', methods=['POST'])
