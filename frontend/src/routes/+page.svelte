@@ -16,8 +16,8 @@
 	});
 
 	const download = (id: Number) => async () => {
-		console.log(id);
 		const response = await fetch(`http://127.0.0.1:5000/files/${id}`);
+		console.log(response);
 	};
 
 	const deleteFile = (id: Number) => async () => {
@@ -43,12 +43,8 @@
 				}
 				return response.json();
 			})
-			.then((data) => {
-				console.log(data);
-				// Handle the response as needed
-			})
 			.catch((error) => {
-				console.error('There was a problem with the fetch operation:', error);
+				console.error('There was a problem with the file upload:', error);
 			});
 	};
 </script>
@@ -88,11 +84,13 @@
 					{file.upload_date}
 				</h2>
 				<h2>size..</h2>
-				<div on:click={download(file.id)}>
-					<h2>get</h2>
-				</div>
-				<div on:click={deleteFile(file.id)}>
-					<h2>delete</h2>
+				<div style="display: flex">
+					<button on:click={download(file.id)}>
+						<h2>get</h2>
+					</button>
+					<button on:click={deleteFile(file.id)}>
+						<h2>delete</h2>
+					</button>
 				</div>
 			</div>
 		{:else}
@@ -120,6 +118,7 @@
 		padding: 0.5rem;
 		border-radius: 0.5rem;
 		display: grid;
-		grid-template-columns: 10fr 10fr 10fr 1fr 1fr;
+		grid-template-columns: 10fr 10fr 8fr 1fr;
+		margin-bottom: 0.5rem;
 	}
 </style>
