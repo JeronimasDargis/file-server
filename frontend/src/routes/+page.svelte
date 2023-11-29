@@ -5,14 +5,14 @@
 	let files = <any>[];
 
 	onMount(async () => {
-		const response = await fetch('http://127.0.0.1:8000/files');
+		const response = await fetch('http://127.0.0.1:5000/files');
 		const { files: data } = await response.json();
 		files = data;
 	});
 
 	const download = (id: Number) => async () => {
 		console.log(id);
-		const response = await fetch(`http://127.0.0.1:8000/files/${id}`);
+		const response = await fetch(`http://127.0.0.1:5000/files/${id}`);
 	};
 </script>
 
@@ -25,7 +25,10 @@
 	<div class="section">
 		<img style="width: auto; padding-bottom: 2rem; height: 300px;" src={pigeon} alt="Pigeon" />
 		<h1>Give me your files</h1>
-		<input type="file" />
+		<form action="http://127.0.0.1:5000/upload" method="post" enctype="multipart/form-data">
+			<input type="file" name="file" />
+			<input type="submit" value="Upload" />
+		</form>
 	</div>
 
 	<div class="collection">
