@@ -1,54 +1,22 @@
 <script lang="ts">
 	import pigeon from '$lib/images/pigeon.webp';
+	import { apiUrl } from '../api/constants';
+	import { routes } from '../api/routes';
 	import { onMount } from 'svelte';
+	import { getAllFiles, downloadFile, deleteFile, uploadFile } from '../api/files';
 
 	let files = <any>[];
 
 	onMount(async () => {
-		const response = await fetch('http://192.168.1.104:8080/files');
-		const { files: data } = await response.json();
-		files = data;
-
-		const fileUploadInput = document.getElementById('uploadForm');
-		if (fileUploadInput) {
-			fileUploadInput.addEventListener('submit', uploadFile());
-		}
+		const response = await getAllFiles();
+		files = response;
 	});
 
-	function downloadFile(id: Number) {
-		const downloadUrl = `http://192.168.1.104:8080/download/${id}`;
-		const link = document.createElement('a');
-		link.href = downloadUrl;
-		link.click();
-	}
-
-	const deleteFile = (id: Number) => async () => {
-		const response = await fetch(`http://192.168.1.104:8080/delete/${id}`, {
-			method: 'POST'
-		});
-		console.log(response);
-	};
-
-	const uploadFile = () => async (e: Event) => {
-		e.preventDefault(); // Prevent the default form submission behavior
-
+	async function triggerFileUpload() {
 		const form = document.getElementById('uploadForm') as HTMLFormElement;
 		const formData = new FormData(form);
-
-		fetch(form.action, {
-			method: form.method,
-			body: formData
-		})
-			.then((response) => {
-				if (!response.ok) {
-					throw new Error('Network response was not ok');
-				}
-				return response.json();
-			})
-			.catch((error) => {
-				console.error('There was a problem with the file upload:', error);
-			});
-	};
+		uploadFile(form, formData);
+	}
 </script>
 
 <svelte:head>
@@ -61,8 +29,9 @@
 		<img style="width: auto; padding-bottom: 2rem; height: 300px;" src={pigeon} alt="Pigeon" />
 		<h1>Give me your files</h1>
 		<form
+			on:submit|preventDefault={triggerFileUpload}
 			id="uploadForm"
-			action="http://192.168.1.104:8080/upload"
+			action="{apiUrl}{routes.upload}"
 			method="post"
 			enctype="multipart/form-data"
 		>
@@ -109,10 +78,6 @@
 		align-items: center;
 		flex: 0.6;
 		margin-bottom: 5rem;
-	}
-
-	.collection {
-		/* styling */
 	}
 
 	.file-row {
