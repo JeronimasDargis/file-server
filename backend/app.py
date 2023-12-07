@@ -26,12 +26,6 @@ db_config = {
 }
 
 
-# Print database configuration to Apache error log
-app.logger.error(f"DB_HOST: {os.getenv('DB_HOST')}")
-app.logger.error(f"DB_USER: {os.getenv('DB_USER')}")
-app.logger.error(f"DB_PASSWORD: {os.getenv('DB_PASSWORD')}")
-app.logger.error(f"DB_NAME: {os.getenv('DB_NAME')}")
-
 UPLOAD_FOLDER = os.getenv('UPLOAD_PATH') 
 
 # @todo Review actual extensions
@@ -147,6 +141,8 @@ def delete_file(file_id):
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor(dictionary=True)
 
+
+# @todo add a function to delete the file from the storage location
     try:
         cursor.execute("DELETE FROM files WHERE id = %s", (file_id,))
         connection.commit()

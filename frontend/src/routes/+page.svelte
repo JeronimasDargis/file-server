@@ -11,6 +11,9 @@
 		fetchFiles();
 	});
 
+	/**
+	 * @todo check how to implement listeners with svelte
+	 */
 	async function fetchFiles() {
 		const response = await getAllFiles();
 		files = response;
