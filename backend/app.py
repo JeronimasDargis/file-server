@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qs
 from datetime import datetime
@@ -15,12 +17,20 @@ CORS(app)
 
 load_dotenv()
 
+
 db_config = {
     'host': os.getenv('DB_HOST'),
     'user': os.getenv('DB_USER'),
     'password': os.getenv('DB_PASSWORD'),
     'database': os.getenv('DB_NAME'),
 }
+
+
+# Print database configuration to Apache error log
+app.logger.error(f"DB_HOST: {os.getenv('DB_HOST')}")
+app.logger.error(f"DB_USER: {os.getenv('DB_USER')}")
+app.logger.error(f"DB_PASSWORD: {os.getenv('DB_PASSWORD')}")
+app.logger.error(f"DB_NAME: {os.getenv('DB_NAME')}")
 
 UPLOAD_FOLDER = os.getenv('UPLOAD_PATH') 
 
@@ -61,6 +71,7 @@ def get_all_files():
         cursor.execute("SELECT * FROM files")
         rows = cursor.fetchall()
         return jsonify({'files': rows})
+    # return jsonify({'files': [{'name': "test"}]})
     finally:
         cursor.close()
         connection.close()
@@ -124,7 +135,7 @@ def download_file(file_id):
         return jsonify({'error': 'Error finding file in the database'}), 400
 
     try:
-        response = send_file(file_path, download_name=filename, as_attachment=True)
+        response = send_file(file_path, as_attachment=True)
         return response
     except FileNotFoundError:
         return jsonify({'error': 'Error finding file on the server'}), 500
@@ -150,4 +161,5 @@ def delete_file(file_id):
 
 # Run the HTTP server
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
+

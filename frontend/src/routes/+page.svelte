@@ -5,7 +5,7 @@
 	let files = <any>[];
 
 	onMount(async () => {
-		const response = await fetch('http://127.0.0.1:5000/files');
+		const response = await fetch('http://192.168.1.104:8080/files');
 		const { files: data } = await response.json();
 		files = data;
 
@@ -16,14 +16,14 @@
 	});
 
 	function downloadFile(id: Number) {
-		const downloadUrl = `http://127.0.0.1:5000/download/${id}`;
+		const downloadUrl = `http://192.168.1.104:8080/download/${id}`;
 		const link = document.createElement('a');
 		link.href = downloadUrl;
 		link.click();
 	}
 
 	const deleteFile = (id: Number) => async () => {
-		const response = await fetch(`http://127.0.0.1:5000/delete/${id}`, {
+		const response = await fetch(`http://192.168.1.104:8080/delete/${id}`, {
 			method: 'POST'
 		});
 		console.log(response);
@@ -62,7 +62,7 @@
 		<h1>Give me your files</h1>
 		<form
 			id="uploadForm"
-			action="http://127.0.0.1:5000/upload"
+			action="http://192.168.1.104:8080/upload"
 			method="post"
 			enctype="multipart/form-data"
 		>
