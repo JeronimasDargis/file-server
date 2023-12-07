@@ -39,7 +39,7 @@ const deleteFile = async (fileId: number) => {
 };
 
 const uploadFile = async (form, formData: FormData) => {
-	fetch(form.action, {
+	await fetch(form.action, {
 		method: form.method,
 		body: formData
 	})

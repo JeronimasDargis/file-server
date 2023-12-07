@@ -8,14 +8,19 @@
 	let files = <any>[];
 
 	onMount(async () => {
+		fetchFiles();
+	});
+
+	async function fetchFiles() {
 		const response = await getAllFiles();
 		files = response;
-	});
+	}
 
 	async function triggerFileUpload() {
 		const form = document.getElementById('uploadForm') as HTMLFormElement;
 		const formData = new FormData(form);
-		uploadFile(form, formData);
+		await uploadFile(form, formData);
+		fetchFiles();
 	}
 </script>
 
